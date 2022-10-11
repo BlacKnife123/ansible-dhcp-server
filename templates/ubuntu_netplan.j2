@@ -1,0 +1,10 @@
+network:
+  ethernets:
+    eth0:
+      dhcp4: true
+    eth1:
+      dhcp4: false
+      addresses: [10.20.30.1/24]
+      nameservers:
+        addresses: [127.0.0.1]
+  version: 2

@@ -1,0 +1,9 @@
+option domain-name "domain_name.com";
+          default-lease-time 600;
+          max-lease-time 7200;
+          authoritative;
+          subnet {{subnet}}0 netmask {{netmask}} {
+             range dynamic-bootp {{subnet}}100 {{subnet}}150;
+             option routers {{subnet}}1;
+             option domain-name-servers {{subnet}}1;
+          }

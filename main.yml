@@ -1,0 +1,108 @@
+---
+- hosts: all
+  remote_user: root
+  become: yes
+  vars_files:
+    - vars/vars.yml
+  tasks:
+    - name: IP Config
+      community.general.nmcli:
+        conn_name: '{{interfaces[1]}}'
+        ifname: '{{interfaces[1]}}'
+        type: '{{type}}'
+        ip4: '{{ipv4}}'
+        gw4: '{{subnet}}254'
+        dns4: '{{subnet}}254'
+        state: present
+      when: ansible_os_family == "RedHat" or ansible_distribution == "openSUSE Leap"
+    - name: internal
+      community.general.nmcli:
+        conn_name: '{{interfaces[1]}}'
+        ifname: '{{interfaces[1]}}'
+        zone: '{{zone[0]}}'
+        state: present
+      when: ansible_distribution == "openSUSE Leap"
+
+    - name: external
+      community.general.nmcli:
+        conn_name: '{{interfaces[0]}}'
+        ifname: '{{interfaces[0]}}'
+        type: '{{type}}'
+        zone: '{{zone[1]}}'
+        state: present
+      when: ansible_distribution == "openSUSE Leap"
+    
+    - name: Ubuntu IP config
+      template:
+        src: templates/ubuntu_netplan.j2
+        dest: /etc/netplan/00-installer-config.yaml
+      when: ansible_os_family == "Debian"
+    
+    - name: apply netplan
+      command: netplan apply
+
+    - name: Install dhcp for OpenSuse
+      community.general.zypper:
+        name: '{{services[0]}}'
+        state: latest
+      when: ansible_distribution == "openSUSE Leap"
+
+    - name: Install dhcp for RedHat Family
+      ansible.builtin.yum:
+        name: '{{services[0]}}'
+        state: latest
+      when: ansible_os_family == "RedHat"
+    
+    - name: Install dhcp for Debian Family
+      ansible.builtin.apt:
+        name: '{{services[2]}}'
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Set up dhcp config for RedHat and Debian Family
+      template:
+        src: templates/dhcp_conf.j2
+        dest: '{{dhcp_paths[2]}}'
+      when: ansible_os_family == "RedHat" or ansible_os_family == "Debian"
+
+    - name: Set up dhcp config for opensuse
+      template:
+        src: templates/dhcp_conf.j2
+        dest: '{{dhcp_paths[0]}}'
+      when: ansible_distribution == "openSUSE Leap"
+
+    - name: Set up interface listener for opensuse
+      ansible.builtin.replace:
+        path: '{{dhcp_paths[1]}}'
+        regexp: 'DHCPD_INTERFACE=""'
+        replace: 'DHCPD_INTERFACE="eth1"'
+      when: ansible_distribution == "openSUSE Leap"
+
+    - name: Copy interface for RedHat Family
+      command: cp '{{dhcp_interfaces[0]}}' '{{dhcp_interfaces[1]}}'
+      when: ansible_os_family == "RedHat"
+    
+    - name: Set up interface listener for RedHat Family
+      ansible.builtin.replace:
+        path: '{{dhcp_interfaces[0]}}'
+        regexp: '\$DHCPDARGS'
+        replace: 'eth1'
+      when: ansible_os_family == "RedHat"
+
+    - name: Set up dhcp listener for Debian Family
+      template:
+        src: templates/dhcp_listener.j2
+        dest: '{{dhcp_interfaces[2]}}'
+      when: ansible_os_family == "Debian"
+
+    - name: Start DHCP Server
+      ansible.builtin.service:
+        state: started
+        name: '{{services[1]}}'
+      when: ansible_os_family == "RedHat" or ansible_distribution == "openSUSE Leap"
+
+    - name: Start DHCP Server
+      ansible.builtin.service:
+        state: started
+        name: '{{services[2]}}'
+      when: ansible_os_family == "Debian"

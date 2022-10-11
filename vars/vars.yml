@@ -1,0 +1,22 @@
+interfaces:
+  - eth0
+  - eth1
+zone:
+  - internal
+  - external
+type: ethernet
+ipv4: 10.20.30.1/24
+subnet: 10.20.30.
+services:
+  - dhcp-server
+  - dhcpd
+  - 'isc-dhcp-server'  
+netmask: 255.255.255.0
+dhcp_paths:
+  - /etc/dhcpd.conf
+  - /etc/sysconfig/dhcpd
+  - /etc/dhcp/dhcpd.conf
+dhcp_interfaces:
+  - /usr/lib/systemd/system/dhcpd.service
+  - /etc/systemd/system/dhcp.service
+  - /etc/default/isc-dhcp-server
