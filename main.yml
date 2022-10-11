@@ -40,6 +40,7 @@
     
     - name: apply netplan
       command: netplan apply
+      when: ansible_os_family == "Debian"
 
     - name: Install dhcp for OpenSuse
       community.general.zypper:
