@@ -35,7 +35,7 @@
     - name: Ubuntu IP config
       template:
         src: templates/ubuntu_netplan.j2
-        dest: /etc/netplan/00-installer-config.yaml
+        dest: '{{netplan}}'
       when: ansible_os_family == "Debian"
     
     - name: apply netplan
